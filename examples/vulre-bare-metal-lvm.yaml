@@ -1,0 +1,64 @@
+# This example is for installing Arch Linux on LVM on Vultr Bare Metal
+# with 2 NVME disks. Both disks will be merged into 1 LVM LV, `/dev/archvg/rootlv`,
+# and used as root filesystem. No swap will be created.
+#
+# Note: Vultr Bare Metal only supports Legacy boot (2023), and requires special
+# kernel parameter `vultr` to boot.
+
+# WARN: Any devices defined under key `disks` will be formatted!
+disks:
+  - device: /dev/nvme0n1
+    partitions:
+      # /dev/sda1
+      - type: lvm
+
+  - device: /dev/nvme0n2
+    partitions:
+      - type: lvm
+
+dm:
+  - type: lvm
+    pv:
+      - /dev/nvme0n1p1
+      - /dev/nvme0n2p1
+    vg:
+      name: archvg
+      pvs:
+        - /dev/nvme0n1p1
+        - /dev/nvme0n2p1
+    lvs:
+      name: rootlv
+      vg: archvg
+
+rootfs:
+  device: /dev/archvg/rootlv
+  fstype: btrfs
+  fsopts: -L rootfs
+  mntopts: "compress:zstd:3"
+
+pacstrap:
+  - base-devel
+  - mandb
+  - openssh
+  - git
+  - go
+  - htop
+  - wget
+  - curl
+  - grub
+
+chroot:
+  # Backup default grub config
+  - cp /etc/default/grub /etc/default/grub.bak
+  # Update grub config to add custom kernel parameters `vultr` and `root`
+  - sed -i '/^GRUB_CMDLINE_LINUX_DEFAULT=/s/=.*$/="vultr quiet log-level=3 root=\/dev\/archvg\/rootlv ro"/' /etc/default/grub
+  # Install grub to MBR of /dev/nvme0n1p1
+  - grub-install --target=i386-pc /dev/nvme0n1p1
+  # Enable NetworkManager
+  - systemctl enable NetworkManager
+  # Enable sshd
+  - systemctl enable sshd
+
+postinstall:
+  - mkinitcpio
+  - 'grep vultr /alitarget/boot/grub/grub.cfg && exit 0 || echo "WARN: flag `vultr not found in /alitarget/boot/grub/grub.cfg - FIX THIS BEFORE REBOOT"; exit 1'

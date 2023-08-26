@@ -1,0 +1,51 @@
+hostname: arch-desktop
+timezone: US/Pacific # Mirrors /usr/share/zoneinfo
+
+# WARN: Any devices defined under key `disks` will be formatted!
+disks:
+  - device: /dev/sda
+    partitions:
+      # /dev/sda1
+      - label: BOOT
+        type: uefi
+        size: 500M
+
+      # /dev/sda2
+      - label: SWAP
+        size: 10G
+
+      # /dev/sda3
+      # Note: If size is omitted, the whole remaining space will be used
+      - label: ROOT
+
+# Create 1 non-root/non-swap filesystem for EFI boot partition
+fs:
+  - device: /dev/sda2
+    mnt: /boot
+    fstype: vfat
+    fsopts: -F 32 -L BOOT
+    mntopts:
+
+# Root filesystem
+rootfs:
+  device: /dev/sda3
+  fstype: btrfs
+  fsopts: -L rootfs
+  mntopts: "compress:zstd:3"
+
+# Swap devices
+swap:
+  - /dev/sda2
+
+# Packages to install (sans hard-coded `base`)
+pacstrap:
+  - base-devel
+  - mandb
+  - git
+  - helix
+  - rustup
+  - go
+
+chroot:
+  - rustup toolchain install stable
+  - echo "tmpfs /rd tmpfs nosuid,nodev,noatime 0 0" >> /etc/fstab

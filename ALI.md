@@ -17,6 +17,82 @@
 > to build a quick blind implementations, or super-safe implementations,
 > all sharing the same simple specs.
 
+# Overview
+
+Each ALI manifest contains _ALI items_, or a _thing_ that
+we'll need to address when installing Arch Linux.
+
+These items are organized into key groups (sometimes just key),
+with each different key group defined under different top-level YAML keys.
+
+Some key group will only have 1 item, e.g. the [`rootfs`](#key-rootfs) key.
+
+Each item in a key will have its own structure, as outlined in the spec.
+
+Most items are declarative, i.e. the ordering of its YAML subkeys are
+irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
+[`chroot`](#key-chroot), and [`postinstall`](#key-postinstall).
+
+## Application of manifest
+
+Order of manifest application
+
+| Preparing mountpoints                                  | Installing `base` | Installing packages         | Hard-coded chroot                                       | User-defined chroot     | User-defined post-install         |
+| ------------------------------------------------------ | ----------------- | --------------------------- | ------------------------------------------------------- | ----------------------- | --------------------------------- |
+| [`disks`](#key-disks)                                  | -                 | [`pacstrap`](#key-pacstrap) | [`hostname`](#key-hostname),[`timezone`](#key-timezone) | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
+| [`dm`](#key-dm)                                        |                   |                             |                                                         |                         |                                   |
+| [`rootfs`](#key-rootfs),                               |                   |                             |                                                         |                         |                                   |
+| [`swap`](#key-swap)                                    |                   |                             |                                                         |                         |                                   |
+| [`fs`](#key-fs)                                        |                   |                             |                                                         |                         |                                   |
+| Mount `rootfs`, `swap`, and other `fs` to `/alitarget` |                   |                             |                                                         |                         |                                   |
+
+Although ALI does not specify steps, common sense tells us that the installer
+would apply ALI items in some crude order:
+
+- Preparing mountpoints (user-defined)
+
+  This is the 1st thing the installer does - prepare our system mountpoints.
+  The installer would have to create a new partition table and partitions
+  [(key `disks`)](#key-disks), then create any DM devices [(key `dm`)](#key-dm),
+  then creating filesystems on those devices as well as mounting them to specified
+  locations (keys [`rootfs`](#key-rootfs), [`swap`](#key-swap), and [`fs`](#key-fs)).
+
+- Installing Arch Linux `base` with `pacstrap(8)` (hard-coded)
+
+  After system mountpoints are ready, the installer should now install `base`
+  meta-package to the mountpoints, making those mountpoint ready to be `chroot(1)`ed into
+
+- Installing Arch Linux packages with `pacstrap(8)` (user-defined)
+
+  Arch packages from key `pacstrap` can then be installed to those mountpoints to
+  bootstrap a minimal Arch system.
+
+- Configure the system with `chroot(1)` (hard-coded)
+
+  After the basic system was freshly installed, the installer would `chroot(1)` into
+  the new system, and performs some hard-coded tasks such as setting up locales
+  and `fstab(5)`.
+
+- Configure the system with `chroot(1)` (user-defined)
+
+  After the installer finishes with its hard-code commands inside `chroot(1)`,
+  the installer will then executes user-defined shell commands from key `chroot`.
+  After this is done, the installer exits.
+
+- Post-install configuration of the system outside `chroot(1)` (user-defined)
+
+  Now that the installer exits from `chroot(1)`, the installer would execute the last
+  items in the manifest: the [`postinstall` key](#key-postinstall).
+
+  Each item in the list here will be executed in the live system, so beware of the file
+  paths in here (unless users prepend `chroot /alitarget` in each list item).
+
+  This part can be used to install a bootloader.
+
+# Keys reference
+
+> Note: only [key `rootfs`](#key-rootfs) is required.
+
 ## Key `hostname`
 
 The hostname of the installed machine
@@ -58,24 +134,41 @@ E.g., `Asia/Bangkok` will link `/usr/share/zoneinfo/Asia/Bangkok` to `/etc/local
 
   - `disks.device.partitions.type`
 
-  The partition type code. If omitted, defaults to `Linux` (`83`)
+  The [Linux partition type code](https://tldp.org/HOWTO/Partition-Mass-Storage-Definitions-Naming-HOWTO/x190.html).
+
+  If omitted, defaults to `linux` (`83`). Some available aliases are:
+
+  ```
+  Aliases:
+   linux          - 83
+   swap           - 82
+   extended       - 05
+   uefi           - EF
+   raid           - FD
+   lvm            - 8E
+   linuxex        - 85
+  ```
 
 ## Key `dm`
 
 `dm` defines how Linux device mappers should be created before creating root filesystem.
-Its values is an array, like GitHub Actions workflow's `steps` - each `dm` entry
+
+Its item value is an array, and like GitHub Actions workflow's `steps`, each `dm` entry
 will be processed in the order that they appear in the manifest.
 
-Each entry must have a `type` key, with 2 possible values: `luks` and `lvm`
+Each entry must have a `type` key, with 2 possible values: `luks` and `lvm`.
 
-The commands are ordered by the keys, i.e. if you have:
+The commands are ordered, i.e. if you have:
 
 ```yaml
 dm:
+  # 1st DM item is LUKS
   - type: luks
     device: /dev/vda2
     name: cryptroot
+    key: mysupersecretkey
 
+  # 2nd DM item is LVM
   - type: lvm
     pvs:
       - /dev/mapper/cryptroot
@@ -91,13 +184,14 @@ dm:
           - archvg
 ```
 
-Then the LUKS device will be created and opened (`luksOpen`),
+Then the LUKS device will be created and opened,
 before the LVM volumes get created on top of it
 
 Likewise, if you have:
 
 ```yaml
 dm:
+  # 1st DM item is LVM
   - type: lvm
     pvs:
       - /dev/vda2
@@ -113,12 +207,38 @@ dm:
       - name: rootlv
         vg: archvg
 
+  # 2nd LVM item is LUKS
   - type: luks
     device: /dev/archvg/rootlv
     name: cryptroot
+    key: mysupersecret
 ```
 
 Then the LVM volumes will be created first, and LUKS on top of it
+
+## LUKS device
+
+LUKS devices are encrypted with a key, which in ALI is specified
+under key `luks.key`. Only clear-text passphrase is supported.
+
+> If you need more flexibility, you can prepare LUKS devices beforehand
+> and then have other manifest items point at the pre-created devices.
+
+The example below will create 2 LUKS devices, each having different
+keys.
+
+```yaml
+dm:
+  - type: luks
+    device: /dev/archvg/rootlv
+    name: cryptroot
+    key: secretkey-root
+
+  - type: luks
+    device: /dev/archvg/swaplv
+    name: cryptswap
+    key: secretkey-swap
+```
 
 ## Key `rootfs`
 
@@ -152,14 +272,14 @@ Then the LVM volumes will be created first, and LUKS on top of it
   rootfs:
     device: /dev/mapper/mylvm
     fstype: btrfs
-    fsflags:
-      - -L rootfs
+    fsopts: -L rootfs
   ```
 
   The above manifest will result in this shell command:
 
   ```shell
   mkfs.btrfs -L rootfs /dev/nvme0n1p1
+  mount /dev/mapper/mylvm /alitarget
   ```
 
 - `rootfs.mntopts` (Optional)
@@ -170,8 +290,7 @@ Then the LVM volumes will be created first, and LUKS on top of it
   rootfs:
     device: /dev/nvme0n1p1
     fstype: btrfs
-    fsflags:
-      - -L rootfs
+    fsopts: -L rootfs
     mntopts: compress:zstd:3
   ```
 
@@ -179,7 +298,7 @@ Then the LVM volumes will be created first, and LUKS on top of it
 
   ```shell
   mkfs.btrfs -L rootfs /dev/nvme0n1p1
-  mount -o compress:zstd:3 /dev/nvme0n1p1
+  mount -o compress:zstd:3 /dev/nvme0n1p1 /alitarget
   ```
 
 ## Key `fs`
@@ -190,15 +309,17 @@ Extra filesystem setups
 
 The mount point **on the installed system**.
 
+If this field is omitted, the filesystem will be created, but not mounted.
+
 - `fs.mntopts`
 
 The mount option for the filesystem
 
 - `fs.device`, `fs.fsopts`, `fs.mntopts`
 
-Identical behaviors to `rootfs` keys
+These fields have identical behaviors to [`rootfs`](#key-rootfs)
 
-## Key `swap` (optional)
+## Key `swap`
 
 Swap devices, as an array of strings pointing to valid block devices
 

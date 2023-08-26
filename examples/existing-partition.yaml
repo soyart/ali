@@ -1,0 +1,33 @@
+# In this manifest, it is assumed that /dev/sda1, /dev/sda2 is an existing empty partition,
+# and /dev/somevg/somelv is an existing empty LV on top of LUKS.
+#
+# So we can start working with rootfs right away
+
+rootfs:
+  device: /dev/somevg/somelv
+  fstype: ext4
+
+fs:
+  device: /dev/sda1
+  fstype: vfat
+  fsopts: -F32
+  mnt: /boot
+
+swap:
+  - /dev/sda2
+
+pacstrap:
+  - base-devel
+  - mandb
+  - git
+  - curl
+  - helix
+  - go
+  - rustup
+  - node
+
+chroot:
+  - bootinstall --esp-path=/boot
+  - mkdir -p /boot/loader/entries
+  - curl https://example.com/somerepo/mybootloader/default.conf > /boot/loader/entries/default.conf
+  - curl https://example.com/somerepo/mynetwork/dhcp.conf > /etc/systemd/network/00-dhcp.conf
