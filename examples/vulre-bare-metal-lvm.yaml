@@ -6,16 +6,18 @@
 # kernel parameter `vultr` to boot.
 
 # WARN: Any devices defined under key `disks` will be formatted!
+# Create new partition table and 1 partition for each NVME disk.
 disks:
   - device: /dev/nvme0n1
     partitions:
-      # /dev/sda1
       - type: lvm
 
   - device: /dev/nvme0n2
     partitions:
       - type: lvm
 
+# Create PV on each partition, assign both to the same VG,
+# and create a new LV filling whole VG
 dm:
   - type: lvm
     pv:
