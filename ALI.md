@@ -1,5 +1,12 @@
 # ALI manifest specifications `v0.0.1`
 
+```text
+   ___   __   ____
+  / _ | / /  /  _/
+ / __ |/ /___/ /
+/_/ |_/____/___/
+```
+
 > ## Note: block storage validation
 >
 > ALI current specifications only specify the parameters for _creation_
@@ -33,61 +40,18 @@ Most items are declarative, i.e. the ordering of its YAML subkeys are
 irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
 [`chroot`](#key-chroot), and [`postinstall`](#key-postinstall).
 
-## Application of manifest
+## ALI stages
 
-Order of manifest application
-
-| Preparing mountpoints                                  | Installing `base` | Installing packages         | Hard-coded chroot                                       | User-defined chroot     | User-defined post-install         |
-| ------------------------------------------------------ | ----------------- | --------------------------- | ------------------------------------------------------- | ----------------------- | --------------------------------- |
-| [`disks`](#key-disks)                                  | -                 | [`pacstrap`](#key-pacstrap) | [`hostname`](#key-hostname),[`timezone`](#key-timezone) | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
-| [`dm`](#key-dm)                                        |                   |                             |                                                         |                         |                                   |
-| [`rootfs`](#key-rootfs),                               |                   |                             |                                                         |                         |                                   |
-| [`swap`](#key-swap)                                    |                   |                             |                                                         |                         |                                   |
-| [`fs`](#key-fs)                                        |                   |                             |                                                         |                         |                                   |
-| Mount `rootfs`, `swap`, and other `fs` to `/alitarget` |                   |                             |                                                         |                         |                                   |
-
-Although ALI does not specify steps, common sense tells us that the installer
-would apply ALI items in some crude order:
-
-- Preparing mountpoints (user-defined)
-
-  This is the 1st thing the installer does - prepare our system mountpoints.
-  The installer would have to create a new partition table and partitions
-  [(key `disks`)](#key-disks), then create any DM devices [(key `dm`)](#key-dm),
-  then creating filesystems on those devices as well as mounting them to specified
-  locations (keys [`rootfs`](#key-rootfs), [`swap`](#key-swap), and [`fs`](#key-fs)).
-
-- Installing Arch Linux `base` with `pacstrap(8)` (hard-coded)
-
-  After system mountpoints are ready, the installer should now install `base`
-  meta-package to the mountpoints, making those mountpoint ready to be `chroot(1)`ed into
-
-- Installing Arch Linux packages with `pacstrap(8)` (user-defined)
-
-  Arch packages from key `pacstrap` can then be installed to those mountpoints to
-  bootstrap a minimal Arch system.
-
-- Configure the system with `chroot(1)` (hard-coded)
-
-  After the basic system was freshly installed, the installer would `chroot(1)` into
-  the new system, and performs some hard-coded tasks such as setting up locales
-  and `fstab(5)`.
-
-- Configure the system with `chroot(1)` (user-defined)
-
-  After the installer finishes with its hard-code commands inside `chroot(1)`,
-  the installer will then executes user-defined shell commands from key `chroot`.
-  After this is done, the installer exits.
-
-- Post-install configuration of the system outside `chroot(1)` (user-defined)
-
-  Now that the installer exits from `chroot(1)`, the installer would execute the last
-  items in the manifest: the [`postinstall` key](#key-postinstall).
-
-  Each item in the list here will be executed in the live system, so beware of the file
-  paths in here (unless users prepend `chroot /alitarget` in each list item).
-
-  This part can be used to install a bootloader.
+| Preparing mountpoints    | Installing `base` and packages | Boring part                 | Hard-coded chroot           | User-defined chroot     | User-defined post-install         |
+| ------------------------ | ------------------------------ | --------------------------- | --------------------------- | ----------------------- | --------------------------------- |
+| [`disks`](#key-disks)    | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone) | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
+| [`dm`](#key-dm)          |                                |                             |                             |                         |                                   |
+| [`rootfs`](#key-rootfs), |                                |                             |                             |                         |                                   |
+| [`swap`](#key-swap)      |                                |                             |                             |                         |                                   |
+| [`fs`](#key-fs)          |                                |                             |                             |                         |                                   |
+|                          |                                |                             |                             |                         |                                   |
+|                          |                                |                             |                             |                         |                                   |
+| `stage-mountpoints`      | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`          | `stage-chroot_user`     | `stage-postinstall_user`          |
 
 # Keys reference
 
@@ -329,8 +293,8 @@ A list of packages to be installed to new system before `arch-chroot`
 
 ## Key `chroot`
 
-A list of commands to be run during `arch-chroot` after some ainyi had
-set up the locales, system time, and other boring stuff
+A list of commands to be run during `arch-chroot` after some ALI installer
+had set up the locales, system time, and other boring stuff
 
 ## Key `postinstall`
 
