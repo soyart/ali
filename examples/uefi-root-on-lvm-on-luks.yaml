@@ -24,6 +24,7 @@ dm:
   - type: luks
     device: /dev/vda2
     name: crypty
+    key: mysupersecret
 
   # Create LVM devices
   - type: lvm
