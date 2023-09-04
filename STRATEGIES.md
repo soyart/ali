@@ -132,7 +132,7 @@ in `alice` terminology:
     ```yaml
     chroot:
       - "#replace-kv PORT 7522 /etc/ssh/sshd_config"
-      - "#replace-kv PasswordAuthentication no"
+      - "#replace-kv PasswordAuthentication no /etc/ssh/sshd_config"
     ```
 
 - `#replace-token`
