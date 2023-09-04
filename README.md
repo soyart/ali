@@ -1,5 +1,12 @@
 # ALI
 
+```text
+   ___   __   ____
+  / _ | / /  /  _/
+ / __ |/ /___/ /
+/_/ |_/____/___/
+```
+
 ALI (Aux Linarch Installer) is a minimal declarative,
 manifest-based Arch Linux installer,
 with [YAML manifest specification](./ALI.md).
@@ -25,16 +32,13 @@ See also: [ALI use mindset and strategies](./STRATEGIES.md)
 
 See [ALI's Application of manifest section](./ALI.md#application-of-manifest)
 
-# Disclaimer
+## Disclaimer
 
-As of now, it does:
+As of now, ALI does specify:
 
 - Block device initialization and filesystems
 
   i.e. creating filesystems, swaps, or other software-defined storage
-
-  > Note: no swap will be created
-  > for [Btrfs](https://man.archlinux.org/man/btrfs.5#SWAPFILE_SUPPORT)
 
 - Basic package installation with `pacstrap(8)`
 
@@ -42,11 +46,13 @@ As of now, it does:
 
   Locale and system time, `genfstab`, etc.
 
-- User's post-scripts
+- User's commands inside `arch-chroot`
+
+- User's post-scripts after `arch-chroot`
 
 - Exit to the live system
 
-It does NOT:
+It does NOT specify:
 
 - Setup networking
 
