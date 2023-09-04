@@ -24,6 +24,7 @@ dm:
   - type: luks
     device: /dev/vda2
     name: crypty
+    key: mysupersecret
 
   # Create LVM devices
   - type: lvm
@@ -50,7 +51,7 @@ dm:
 # with command:
 # mkfs.btrfs -L /dev/archvg/rootlv
 #
-# And mount it to /mnt of live system with:
+# And mount it to /alitarget of live system with:
 # mount -o compress:zstd:3 /dev/archvg/roolv
 rootfs:
   device: /dev/archvg/rootlv # Use the LVM device created above
@@ -80,16 +81,16 @@ swap:
   - /dev/archvg/swaplv
 
 pacstrap:
-  - base
   - base-devel
+  - curl
   - git
   - helix
 
 # Commands to run in chroot
 chroot:
   - "bootctl --path=/boot install"
-  - "curl https://example.com/arch/boot-entries > /boot/loader/entries/main.conf"
-  - "curl https://example.com/arch/boot-entries > setup-boot.sh"
+  - "curl https://example.com/arch-templates/lvm-on-luks/boot-entries/main.conf > /boot/loader/entries/main.conf"
+  - "curl https://example.com/arch-templates/lvm-on-luks/boot-entries/setup-boot.sh > setup-boot.sh"
   - "chmod +x setup-boot.sh"
   - "./setup-boot.sh"
 

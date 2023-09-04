@@ -1,5 +1,12 @@
 # ALI manifest specifications `v0.0.1`
 
+```text
+   ___   __   ____
+  / _ | / /  /  _/
+ / __ |/ /___/ /
+/_/ |_/____/___/
+```
+
 > ## Note: block storage validation
 >
 > ALI current specifications only specify the parameters for _creation_
@@ -16,6 +23,39 @@
 > This is to reduce the complexity of the specifications, allowing us
 > to build a quick blind implementations, or super-safe implementations,
 > all sharing the same simple specs.
+
+# Overview
+
+Each ALI manifest contains _ALI items_, or a _thing_ that
+we'll need to address when installing Arch Linux.
+
+These items are organized into key groups (sometimes just key),
+with each different key group defined under different top-level YAML keys.
+
+Some key group will only have 1 item, e.g. the [`rootfs`](#key-rootfs) key.
+
+Each item in a key will have its own structure, as outlined in the spec.
+
+Most items are declarative, i.e. the ordering of its YAML subkeys are
+irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
+[`chroot`](#key-chroot), and [`postinstall`](#key-postinstall).
+
+## ALI stages
+
+| Preparing mountpoints    | Installing `base` and packages | Boring part                 | Hard-coded chroot           | User-defined chroot     | User-defined post-install         |
+| ------------------------ | ------------------------------ | --------------------------- | --------------------------- | ----------------------- | --------------------------------- |
+| [`disks`](#key-disks)    | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone) | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
+| [`dm`](#key-dm)          |                                |                             |                             |                         |                                   |
+| [`rootfs`](#key-rootfs), |                                |                             |                             |                         |                                   |
+| [`swap`](#key-swap)      |                                |                             |                             |                         |                                   |
+| [`fs`](#key-fs)          |                                |                             |                             |                         |                                   |
+|                          |                                |                             |                             |                         |                                   |
+|                          |                                |                             |                             |                         |                                   |
+| `stage-mountpoints`      | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`          | `stage-chroot_user`     | `stage-postinstall_user`          |
+
+# Keys reference
+
+> Note: only [key `rootfs`](#key-rootfs) is required.
 
 ## Key `hostname`
 
@@ -58,24 +98,41 @@ E.g., `Asia/Bangkok` will link `/usr/share/zoneinfo/Asia/Bangkok` to `/etc/local
 
   - `disks.device.partitions.type`
 
-  The partition type code. If omitted, defaults to `Linux` (`83`)
+  The [Linux partition type code](https://tldp.org/HOWTO/Partition-Mass-Storage-Definitions-Naming-HOWTO/x190.html).
+
+  If omitted, defaults to `linux` (`83`). Some available aliases are:
+
+  ```
+  Aliases:
+   linux          - 83
+   swap           - 82
+   extended       - 05
+   uefi           - EF
+   raid           - FD
+   lvm            - 8E
+   linuxex        - 85
+  ```
 
 ## Key `dm`
 
 `dm` defines how Linux device mappers should be created before creating root filesystem.
-Its values is an array, like GitHub Actions workflow's `steps` - each `dm` entry
+
+Its item value is an array, and like GitHub Actions workflow's `steps`, each `dm` entry
 will be processed in the order that they appear in the manifest.
 
-Each entry must have a `type` key, with 2 possible values: `luks` and `lvm`
+Each entry must have a `type` key, with 2 possible values: `luks` and `lvm`.
 
-The commands are ordered by the keys, i.e. if you have:
+The commands are ordered, i.e. if you have:
 
 ```yaml
 dm:
+  # 1st DM item is LUKS
   - type: luks
     device: /dev/vda2
     name: cryptroot
+    key: mysupersecretkey
 
+  # 2nd DM item is LVM
   - type: lvm
     pvs:
       - /dev/mapper/cryptroot
@@ -91,13 +148,14 @@ dm:
           - archvg
 ```
 
-Then the LUKS device will be created and opened (`luksOpen`),
+Then the LUKS device will be created and opened,
 before the LVM volumes get created on top of it
 
 Likewise, if you have:
 
 ```yaml
 dm:
+  # 1st DM item is LVM
   - type: lvm
     pvs:
       - /dev/vda2
@@ -113,12 +171,38 @@ dm:
       - name: rootlv
         vg: archvg
 
+  # 2nd LVM item is LUKS
   - type: luks
     device: /dev/archvg/rootlv
     name: cryptroot
+    key: mysupersecret
 ```
 
 Then the LVM volumes will be created first, and LUKS on top of it
+
+## LUKS device
+
+LUKS devices are encrypted with a key, which in ALI is specified
+under key `luks.key`. Only clear-text passphrase is supported.
+
+> If you need more flexibility, you can prepare LUKS devices beforehand
+> and then have other manifest items point at the pre-created devices.
+
+The example below will create 2 LUKS devices, each having different
+keys.
+
+```yaml
+dm:
+  - type: luks
+    device: /dev/archvg/rootlv
+    name: cryptroot
+    key: secretkey-root
+
+  - type: luks
+    device: /dev/archvg/swaplv
+    name: cryptswap
+    key: secretkey-swap
+```
 
 ## Key `rootfs`
 
@@ -152,14 +236,14 @@ Then the LVM volumes will be created first, and LUKS on top of it
   rootfs:
     device: /dev/mapper/mylvm
     fstype: btrfs
-    fsflags:
-      - -L rootfs
+    fsopts: -L rootfs
   ```
 
   The above manifest will result in this shell command:
 
   ```shell
   mkfs.btrfs -L rootfs /dev/nvme0n1p1
+  mount /dev/mapper/mylvm /alitarget
   ```
 
 - `rootfs.mntopts` (Optional)
@@ -170,8 +254,7 @@ Then the LVM volumes will be created first, and LUKS on top of it
   rootfs:
     device: /dev/nvme0n1p1
     fstype: btrfs
-    fsflags:
-      - -L rootfs
+    fsopts: -L rootfs
     mntopts: compress:zstd:3
   ```
 
@@ -179,7 +262,7 @@ Then the LVM volumes will be created first, and LUKS on top of it
 
   ```shell
   mkfs.btrfs -L rootfs /dev/nvme0n1p1
-  mount -o compress:zstd:3 /dev/nvme0n1p1
+  mount -o compress:zstd:3 /dev/nvme0n1p1 /alitarget
   ```
 
 ## Key `fs`
@@ -190,15 +273,17 @@ Extra filesystem setups
 
 The mount point **on the installed system**.
 
+If this field is omitted, the filesystem will be created, but not mounted.
+
 - `fs.mntopts`
 
 The mount option for the filesystem
 
 - `fs.device`, `fs.fsopts`, `fs.mntopts`
 
-Identical behaviors to `rootfs` keys
+These fields have identical behaviors to [`rootfs`](#key-rootfs)
 
-## Key `swap` (optional)
+## Key `swap`
 
 Swap devices, as an array of strings pointing to valid block devices
 
@@ -208,8 +293,8 @@ A list of packages to be installed to new system before `arch-chroot`
 
 ## Key `chroot`
 
-A list of commands to be run during `arch-chroot` after some ainyi had
-set up the locales, system time, and other boring stuff
+A list of commands to be run during `arch-chroot` after some ALI installer
+had set up the locales, system time, and other boring stuff
 
 ## Key `postinstall`
 
