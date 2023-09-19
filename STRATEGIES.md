@@ -173,11 +173,32 @@ in `alice` terminology:
 
   Examples:
 
-  - Configure a simple network interface:
+  - Configures a simple network interface:
 
     DHCP on `ens3` with DNS upstream at `9.9.9.9`
 
     ```yaml
     postinstall:
       - "#quicknet ens3 dns 9.9.9.9"
+    ```
+
+- `#uncomment-key`
+
+  Uncomments `KEY` in `FILENAME`
+
+  Syntax: `#uncomment-key <KEY> [prefix <COMMENT_PREFIX] <FILENAME>`
+
+  Action: Uncomments key `KEY` in file `FILENAME`. Default comment prefix
+  is `#`, although this can be overriden with optional argument `prefix <COMMENT_PREFIX>`
+
+  Examples:
+
+  - Uncomments `#PubkeyAuthentication yes` in `/etc/ssh/sshd_conf`
+
+    Because `sshd_conf` comment starts with default `#`, we don't have to
+    supply the comment prefix:
+
+    ```yaml
+    chroot:
+      - "#uncomment-key PubkeyAuthentication /etc/ssh/sshd_conf"
     ```

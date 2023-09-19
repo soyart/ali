@@ -8,60 +8,66 @@
 ```
 
 ALI (Aux Linarch Installer) is a minimal declarative,
-manifest-based Arch Linux installer,
-with [YAML manifest specification](./ALI.md).
+manifest-based Arch Linux installer.
 
-This repository only hosts the specification of ALI,
-i.e. what an installer should do based on the manifest,
-but without the actual implementations.
+This repository provides:
 
+- [ALI specifications](./ALI.md)
+
+- [ALI strategies, ideas, etc.](./STRATEGIES.md)
+
+> This repository only hosts the specification of ALI,
+> i.e. what an installer should do based on the manifest,
+> but without the actual implementations.
+> Also, this specification does not specify how to validate the
+> manifest, leaving the question of validation entirely to the
+> implementations.
+>
 > A WIP Rust implementation is available
 > at [`ali-rs`](https://github.com/soyart/ali-rs)
 
-The specification is very minimal, and it will still require
-that the user or the implementations do some extra work, like
-installing and configuring bootloader.
-
-Also, this specification does not specify how to validate the
-manifest, leaving the question of validation entirely to the
-implementations.
-
-See also: [ALI use mindset and strategies](./STRATEGIES.md)
+See also: [ALI YAML examples](./examples/)
 
 ## Arch Linux installation steps
 
 See [ALI's Application of manifest section](./ALI.md#application-of-manifest)
 
-## Disclaimer
+## Features
 
-As of now, ALI does specify:
+### Covered by ALI
 
-- Block device initialization and filesystems
+- Block device and mountpoint initialization
 
-  i.e. creating filesystems, swaps, or other software-defined storage
+  - [partitioning](./ALI.md#key-disks)
 
-- Basic package installation with `pacstrap(8)`
+  - [filesystems](./ALI.md#key-rootfs), [swaps](./ALI.md#key-swap), and [other software-defined storage](./ALI.md#key-dm)
+
+  - [mounts](./ALI.md#key-fs)
+
+- [Packages installation](./ALI.md#key-pacstrap) with `pacstrap(8)`
 
 - Boring steps
 
-  Locale and system time, `genfstab`, etc.
+  - locale (UTF-8 English)
 
-- User's commands inside `arch-chroot`
+  - [system time](./ALI.md#key-timezone)
 
-- User's post-scripts after `arch-chroot`
+  - `genfstab`
 
-- Exit to the live system
+- [User's commands inside `arch-chroot`](./ALI.md#key-chroot)
 
-It does NOT specify:
+  - e.g. `mkinitcpio`
+
+- [User's post-install scripts](./ALI.md#key-postinstall) after `arch-chroot`
+
+  - e.g. `efibootmgr`
+
+### Not covered by ALI
 
 - Setup networking
 
   > Warn: You might need to setup `systemd-networkd` before reboot to new system
 
-- Update `mkinitcpio.conf`
+- Configure `mkinitcpio.conf`
 
 - Install and configure bootloader
-
-A lot of options are hard-coded as hard defaults, such as:
-
-- Locale will always be `en_US.UTF-8`
