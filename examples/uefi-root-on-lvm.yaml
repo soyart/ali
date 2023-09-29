@@ -87,5 +87,7 @@ chroot:
   - "chmod +x setup-boot.sh"
   - "./setup-boot.sh"
 
+rootpasswd: $6$mysalt$ToMpSyNM/gQrU9/7eiLTJdkU68LAZ4hdQPSMu9h.Etl2XT9mQ2z7W5IVWcezAbXdw5xmXi86.VkNVSrpg9IBv.
+
 # Command to run on the live system
 postinstall:

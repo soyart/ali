@@ -42,16 +42,16 @@ irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
 
 ## ALI stages
 
-| Preparing mountpoints    | Installing `base` and packages | Boring part                 | Hard-coded chroot           | User-defined chroot     | User-defined post-install         |
-| ------------------------ | ------------------------------ | --------------------------- | --------------------------- | ----------------------- | --------------------------------- |
-| [`disks`](#key-disks)    | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone) | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
-| [`dm`](#key-dm)          |                                |                             |                             |                         |                                   |
-| [`rootfs`](#key-rootfs), |                                |                             |                             |                         |                                   |
-| [`swap`](#key-swap)      |                                |                             |                             |                         |                                   |
-| [`fs`](#key-fs)          |                                |                             |                             |                         |                                   |
-|                          |                                |                             |                             |                         |                                   |
-|                          |                                |                             |                             |                         |                                   |
-| `stage-mountpoints`      | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`          | `stage-chroot_user`     | `stage-postinstall_user`          |
+| Preparing mountpoints    | Installing `base` and packages | Boring part                 | Hard-coded chroot               | User-defined chroot     | User-defined post-install         |
+| ------------------------ | ------------------------------ | --------------------------- | ------------------------------- | ----------------------- | --------------------------------- |
+| [`disks`](#key-disks)    | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone)     | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
+| [`dm`](#key-dm)          |                                |                             | [`rootpasswd`](#key-rootpasswd) |                         |                                   |
+| [`rootfs`](#key-rootfs), |                                |                             |                                 |                         |                                   |
+| [`swap`](#key-swap)      |                                |                             |                                 |                         |                                   |
+| [`fs`](#key-fs)          |                                |                             |                                 |                         |                                   |
+|                          |                                |                             |                                 |                         |                                   |
+|                          |                                |                             |                                 |                         |                                   |
+| `stage-mountpoints`      | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`              | `stage-chroot_user`     | `stage-postinstall_user`          |
 
 # Keys reference
 
@@ -291,13 +291,36 @@ Swap devices, as an array of strings pointing to valid block devices
 
 A list of packages to be installed to new system before `arch-chroot`
 
+Any commands provided by packages declared and successfully installed from
+this key should later be available to use in key [`chroot`](#key-chroot)
+
 ## Key `chroot`
 
 A list of commands to be run during `arch-chroot` after some ALI installer
 had set up the locales, system time, and other boring stuff
 
+## Key `rootpasswd`
+
+Hashed password for user `root`. Do not enter plaintext password here -
+instead, use the following commands to generate hash password:
+
+```shell
+openssl passwd -6 -salt 'mysalt' 'yourpass' # SHA-512
+openssl passwd -5 -salt 'mysalt' 'yourpass' # SHA-256
+```
+
+[You can use this StackOverflow article to alternatively generate a hashed Linux
+password.](https://unix.stackexchange.com/questions/81240/manually-generate-password-for-etc-shadow).
+
+The password will be applied with the following shell command
+run in `chroot` by the installer:
+
+```shell
+echo "root:${hashedPassword}" | chpasswd -e
+```
+
 ## Key `postinstall`
 
 A list of commands to be run after ainyi had exited from `arch-chroot`.
 
-After this section, the script stops, and users must proceed from here
+After this key, the installer exits, and users must proceed from here

@@ -61,6 +61,8 @@ chroot:
   # Enable sshd
   - systemctl enable sshd
 
+rootpasswd: $6$mysalt$ToMpSyNM/gQrU9/7eiLTJdkU68LAZ4hdQPSMu9h.Etl2XT9mQ2z7W5IVWcezAbXdw5xmXi86.VkNVSrpg9IBv.
+
 postinstall:
   - mkinitcpio
   - 'grep vultr /alitarget/boot/grub/grub.cfg && exit 0 || echo "WARN: flag `vultr not found in /alitarget/boot/grub/grub.cfg - FIX THIS BEFORE REBOOT"; exit 1'

@@ -31,3 +31,5 @@ chroot:
   - mkdir -p /boot/loader/entries
   - curl https://example.com/somerepo/mybootloader/default.conf > /boot/loader/entries/default.conf
   - curl https://example.com/somerepo/mynetwork/dhcp.conf > /etc/systemd/network/00-dhcp.conf
+
+rootpasswd: $6$mysalt$ToMpSyNM/gQrU9/7eiLTJdkU68LAZ4hdQPSMu9h.Etl2XT9mQ2z7W5IVWcezAbXdw5xmXi86.VkNVSrpg9IBv.

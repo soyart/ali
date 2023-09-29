@@ -49,3 +49,5 @@ pacstrap:
 chroot:
   - rustup toolchain install stable
   - echo "tmpfs /rd tmpfs nosuid,nodev,noatime 0 0" >> /etc/fstab
+
+rootpasswd: $6$mysalt$ToMpSyNM/gQrU9/7eiLTJdkU68LAZ4hdQPSMu9h.Etl2XT9mQ2z7W5IVWcezAbXdw5xmXi86.VkNVSrpg9IBv.
