@@ -69,8 +69,10 @@ fs:
   - device: /dev/vda1
     fstype: vfat
     fsopts: -F 32 -L BOOT
-    mnt: /boot
-    mntopts:
+
+mountpoint:
+  - device: /dev/vda1
+    dest: /boot
 
 # Create swap with:
 # mkswap /dev/archvg/swaplv

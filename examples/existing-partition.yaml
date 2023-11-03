@@ -11,7 +11,10 @@ fs:
   device: /dev/sda1
   fstype: vfat
   fsopts: -F32
-  mnt: /boot
+
+mountpoint:
+  device: /dev/sda1
+  dest: /boot
 
 swap:
   - /dev/sda2
