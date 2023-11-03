@@ -70,7 +70,7 @@ fs:
     fstype: vfat
     fsopts: -F 32 -L BOOT
 
-mountpoint:
+mountpoints:
   - device: /dev/vda1
     dest: /boot
 

@@ -62,7 +62,7 @@ fs:
 
 # And mount it with:
 # mount /dev/vda1 /boot
-mountpoint:
+mountpoints:
   - device: /dev/vda1
     dest: /boot
 

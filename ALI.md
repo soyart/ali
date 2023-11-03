@@ -42,16 +42,16 @@ irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
 
 ## ALI stages
 
-| Preparing mountpoints           | Installing `base` and packages | Boring part                 | Hard-coded chroot               | User-defined chroot     | User-defined post-install         |
-|---------------------------------|--------------------------------|-----------------------------|---------------------------------|-------------------------|-----------------------------------|
-| [`disks`](#key-disks)           | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone)     | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
-| [`dm`](#key-dm)                 |                                |                             | [`rootpasswd`](#key-rootpasswd) |                         |                                   |
-| [`rootfs`](#key-rootfs),        |                                |                             |                                 |                         |                                   |
-| [`swap`](#key-swap)             |                                |                             |                                 |                         |                                   |
-| [`fs`](#key-fs)                 |                                |                             |                                 |                         |                                   |
-| [`mountpoint`](#key-mountpoint) |                                |                             |                                 |                         |                                   |
-|                                 |                                |                             |                                 |                         |                                   |
-| `stage-mountpoints`             | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`              | `stage-chroot_user`     | `stage-postinstall_user`          |
+| Preparing mountpoints             | Installing `base` and packages | Boring part                 | Hard-coded chroot               | User-defined chroot     | User-defined post-install         |
+|-----------------------------------|--------------------------------|-----------------------------|---------------------------------|-------------------------|-----------------------------------|
+| [`disks`](#key-disks)             | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone)     | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
+| [`dm`](#key-dm)                   |                                |                             | [`rootpasswd`](#key-rootpasswd) |                         |                                   |
+| [`rootfs`](#key-rootfs),          |                                |                             |                                 |                         |                                   |
+| [`swap`](#key-swap)               |                                |                             |                                 |                         |                                   |
+| [`fs`](#key-fs)                   |                                |                             |                                 |                         |                                   |
+| [`mountpoints`](#key-mountpoints) |                                |                             |                                 |                         |                                   |
+|                                   |                                |                             |                                 |                         |                                   |
+| `stage-mountpoints`               | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`              | `stage-chroot_user`     | `stage-postinstall_user`          |
 
 # Keys reference
 
@@ -295,7 +295,7 @@ fs:
     fstype: btrfs
 ```
 
-## Key `mountpoint`
+## Key `mountpoints`
 
 Defines **non-root** mountpoints on the new system,
 as well as in the new system's `fstab` entries.
@@ -313,7 +313,7 @@ as well as in the new system's `fstab` entries.
   Mount options to pass to `mount`
 
 ```yaml
-mountpoint:
+mountpoints:
   # mount /dev/sda1 /{install_mnt}/boot
   # which will be written to fstab as /boot
   - device: /dev/sda1

@@ -12,7 +12,7 @@ fs:
   fstype: vfat
   fsopts: -F32
 
-mountpoint:
+mountpoints:
   device: /dev/sda1
   dest: /boot
 

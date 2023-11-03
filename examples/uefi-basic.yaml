@@ -24,7 +24,7 @@ fs:
     fstype: vfat
     fsopts: -F 32 -L BOOT
 
-mountpoint:
+mountpoints:
   - device: /dev/sda2
     dest: /boot
 
