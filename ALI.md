@@ -267,7 +267,9 @@ dm:
 
 ## Key `fs`
 
-Create filesystems
+Creates **non-root** filesystems
+
+> For root filesystem, see [key `rootfs`](#key-rootfs)
 
 - `device`
 
