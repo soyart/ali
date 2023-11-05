@@ -42,34 +42,43 @@ irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
 
 ## ALI stages
 
-| Preparing mountpoints    | Installing `base` and packages | Boring part                 | Hard-coded chroot               | User-defined chroot     | User-defined post-install         |
-| ------------------------ | ------------------------------ | --------------------------- | ------------------------------- | ----------------------- | --------------------------------- |
-| [`disks`](#key-disks)    | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone)     | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
-| [`dm`](#key-dm)          |                                |                             | [`rootpasswd`](#key-rootpasswd) |                         |                                   |
-| [`rootfs`](#key-rootfs), |                                |                             |                                 |                         |                                   |
-| [`swap`](#key-swap)      |                                |                             |                                 |                         |                                   |
-| [`fs`](#key-fs)          |                                |                             |                                 |                         |                                   |
-|                          |                                |                             |                                 |                         |                                   |
-|                          |                                |                             |                                 |                         |                                   |
-| `stage-mountpoints`      | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`              | `stage-chroot_user`     | `stage-postinstall_user`          |
+| Preparing mountpoints             | Installing `base` and packages | Boring part                 | Hard-coded chroot               | User-defined chroot     | User-defined post-install         |
+|-----------------------------------|--------------------------------|-----------------------------|---------------------------------|-------------------------|-----------------------------------|
+| [`disks`](#key-disks)             | [`pacstrap`](#key-pacstrap)    | [`hostname`](#key-hostname) | [`timezone`](#key-timezone)     | [`chroot`](#key-chroot) | [`postinstall`](#key-postinstall) |
+| [`dm`](#key-dm)                   |                                |                             | [`rootpasswd`](#key-rootpasswd) |                         |                                   |
+| [`rootfs`](#key-rootfs),          |                                |                             |                                 |                         |                                   |
+| [`swap`](#key-swap)               |                                |                             |                                 |                         |                                   |
+| [`fs`](#key-fs)                   |                                |                             |                                 |                         |                                   |
+| [`mountpoints`](#key-mountpoints) |                                |                             |                                 |                         |                                   |
+|                                   |                                |                             |                                 |                         |                                   |
+| `stage-mountpoints`               | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`              | `stage-chroot_user`     | `stage-postinstall_user`          |
 
-# Keys reference
+# Manifest keys reference
 
-> Note: only [key `rootfs`](#key-rootfs) is required.
+> Note: only [key `rootfs`](#key-rootfs) is a required key.
+> Specifying only `rootfs` will get you a new system with `base` installed
+> with `stage-chroot_ali` modifications.
 
 ## Key `hostname`
 
-The hostname of the installed machine
+The hostname of the installed system. Default values depend on implementations.
 
 ## Key `timezone`
 
 A path to timezone file (in `/usr/share/zoneinfo`) to be linked to `/etc/localtime`
 
-E.g., `Asia/Bangkok` will link `/usr/share/zoneinfo/Asia/Bangkok` to `/etc/localtime`
+E.g. `Asia/Bangkok` will link `/usr/share/zoneinfo/Asia/Bangkok` to `/etc/localtime`
 
 ## Key `disks`
 
-`disks` defines how partition tables are created on the disks.
+Changes to be made to disks (partitioning). This key is destructive - any disk specified in an
+entry will be wiped clean with new partition table.
+
+> If you wish to preserve data on a disk while using it in the new system,
+> prepare the new partitions manually before hand.
+>
+> Then, you could specify the newly created partition path in either of the keys
+> [`dm`](#key-dm), [`rootfs`](#key-rootfs), [`fs`](#key-fs), or [`swap`](#key-swap).
 
 - `disks.device`
 
@@ -267,25 +276,87 @@ dm:
 
 ## Key `fs`
 
-Extra filesystem setups
+Creates **non-root** filesystems
 
-- `fs.mnt`
+> For root filesystem, see [key `rootfs`](#key-rootfs)
 
-The mount point **on the installed system**.
+- `device`
 
-If this field is omitted, the filesystem will be created, but not mounted.
+  Device to create filesystem on
 
-- `fs.mntopts`
+- `fstype`
 
-The mount option for the filesystem
+  Type of filesystem to create, e.g. `ext4`, `xfs`, `btrfs`
 
-- `fs.device`, `fs.fsopts`, `fs.mntopts`
+- `fsopts` (Optional)
 
-These fields have identical behaviors to [`rootfs`](#key-rootfs)
+  Options to pass to `mkfs`
+
+```yaml
+fs:
+  # mkfs.vfat -F32 /dev/sda1
+  - device: /dev/sda1
+    fstype: vfat
+    fsopts: -F32
+
+  # mkfs.btrfs /dev/sda2
+  - device: /dev/sda2
+    fstype: btrfs
+```
+
+## Key `mountpoints`
+
+Defines **non-root** mountpoints on the new system,
+as well as in the new system's `fstab` entries.
+
+- `device`
+
+  Path to source filesystem to mount
+
+- `dest`
+
+  Path to destination mountpoint
+
+- `mntopts` (Optional)
+
+  Mount options to pass to `mount`
+
+```yaml
+mountpoints:
+  # mount /dev/sda1 /{install_mnt}/boot
+  # which will be written to fstab as /boot
+  - device: /dev/sda1
+    dest: /boot
+    mntopts:
+
+  # mount /dev/sda2 -o compress:zstd:3 /data
+  - device: /dev/sda2
+    dest: /data
+    mntopts: compress:zstd:3
+```
 
 ## Key `swap`
 
 Swap devices, as an array of strings pointing to valid block devices
+
+Example:
+
+```yaml
+swap:
+  - /dev/nvme0n1p2
+  - /dev/sda3
+```
+
+This will create swap on 2 devices, mount them, and later write these
+devices to new system's `fstab` as swap devices:
+
+```shell
+mkswap /dev/nvme0n1p2
+mkswap /dev/sda3
+
+swapon /dev/nvme0n1p2
+swapon /dev/sda3
+```
 
 ## Key `pacstrap`
 

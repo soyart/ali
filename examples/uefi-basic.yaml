@@ -21,10 +21,12 @@ disks:
 # Create 1 non-root/non-swap filesystem for EFI boot partition
 fs:
   - device: /dev/sda2
-    mnt: /boot
     fstype: vfat
     fsopts: -F 32 -L BOOT
-    mntopts:
+
+mountpoints:
+  - device: /dev/sda2
+    dest: /boot
 
 # Root filesystem
 rootfs:
