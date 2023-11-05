@@ -53,23 +53,32 @@ irrelevant. Some items are procedural, as with key [`dm`](#key-dm),
 |                                   |                                |                             |                                 |                         |                                   |
 | `stage-mountpoints`               | `stage-bootstrap`              | `stage-bootstrap`           | `stage-chroot_ali`              | `stage-chroot_user`     | `stage-postinstall_user`          |
 
-# Keys reference
+# Manifest keys reference
 
-> Note: only [key `rootfs`](#key-rootfs) is required.
+> Note: only [key `rootfs`](#key-rootfs) is a required key.
+> Specifying only `rootfs` will get you a new system with `base` installed
+> with `stage-chroot_ali` modifications.
 
 ## Key `hostname`
 
-The hostname of the installed machine
+The hostname of the installed system. Default values depend on implementations.
 
 ## Key `timezone`
 
 A path to timezone file (in `/usr/share/zoneinfo`) to be linked to `/etc/localtime`
 
-E.g., `Asia/Bangkok` will link `/usr/share/zoneinfo/Asia/Bangkok` to `/etc/localtime`
+E.g. `Asia/Bangkok` will link `/usr/share/zoneinfo/Asia/Bangkok` to `/etc/localtime`
 
 ## Key `disks`
 
-`disks` defines how partition tables are created on the disks.
+Changes to be made to disks (partitioning). This key is destructive - any disk specified in an
+entry will be wiped clean with new partition table.
+
+> If you wish to preserve data on a disk while using it in the new system,
+> prepare the new partitions manually before hand.
+>
+> Then, you could specify the newly created partition path in either of the keys
+> [`dm`](#key-dm), [`rootfs`](#key-rootfs), [`fs`](#key-fs), or [`swap`](#key-swap).
 
 - `disks.device`
 
