@@ -101,7 +101,7 @@ See [ALI's Application of manifest section](./ALI.md#application-of-manifest)
   This can be used to set up stuff post-chroot, e.g. when
   creating a new `efibootmgr` entries after a successful installation.
 
-### Not covered by ALI manifest keys
+### Not officially covered by ALI manifest keys
 
 > Note: Most if not all of these list items below
 > can actually be done with shell commands/scripts.
@@ -111,7 +111,11 @@ See [ALI's Application of manifest section](./ALI.md#application-of-manifest)
 
 - Networking
 
+  note: network interfaces and DNS upstream is supported by [ali-rs implementation](https://github.com/soyart/ali-rs)
+
 - `mkinitcpio` and boot images
+
+  note: popular templates supported by [ali-rs implementation](https://github.com/soyart/ali-rs)
 
 - User management
 
